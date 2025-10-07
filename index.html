@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruta Ejecutiva - Viajes Exclusivos</title>
+    <!-- Incluyendo Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-black': '#101010', /* Negro ultraprofesional */
+                        'card-dark': '#1c1c1c',   /* Gris oscuro para el contenedor */
+                        'accent-light': '#ffffff', /* Blanco puro para texto y acentos */
+                        'success-green': '#00d084', /* Acento similar a Uber */
+                        'alert-yellow': '#ffc000',
+                        'danger-red': '#f44336',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos base y Parallax */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0d0d;
+            /* Imagen de Fondo (Ahora sin el velo blanco) */
+            background-image: url('https://i0.wp.com/thehappening.com/wp-content/uploads/2024/12/van-life.jpg?fit=1633%2C930&ssl=1');
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        /* Contenedor principal: Capa oscura semi-transparente sobre la imagen de fondo */
+        .content-wrapper {
+            background-color: rgba(0, 0, 0, 0.65); /* Oscurece la imagen para mejor contraste */
+            min-height: 100vh;
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+            /* Padding para celular (parch) */
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        /* Card: Ahora con fondo oscuro semi-transparente para el look premium */
+        .card {
+            background-color: rgba(28, 28, 28, 0.9); /* Dark semi-transparent card */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            color: #e0e0e0; /* Texto claro por defecto */
+        }
+        
+        .result-box {
+            border-left: 5px solid #00d084; /* Borde de acento Uber */
+        }
+
+        /* Estilo profesional y minimalista para el input de fecha */
+        #travel_date {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #333333; /* Fondo oscuro */
+            color: #ffffff; /* Texto blanco */
+            border-color: #444444;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        /* Ocultar el icono nativo de calendario para un look más limpio (solo en Chrome/Safari) */
+        #travel_date::-webkit-calendar-picker-indicator {
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+        }
+        /* Icono de calendario visible manual */
+        .date-input-wrapper::after {
+            content: '📅';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none; /* No interfiere con el click en el input */
+            color: #ffffff;
+            font-size: 1.2rem;
+        }
+
+        /* Estilos del Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <div id="app-container" class="w-full max-w-4xl mx-auto">
+            <header class="text-center mb-10">
+                <h1 class="text-5xl font-extrabold text-white mb-2 shadow-text">
+                    <span class="text-success-green">Ruta</span> Ejecutiva
+                </h1>
+                <p class="text-xl text-gray-300 font-semibold">Tu experiencia de viaje premium, solo para ti.</p>
+            </header>
+
+            <!-- Tarjeta Principal de Cálculo -->
+            <div class="card p-6 sm:p-8 rounded-xl border-t-4 border-success-green">
+                <h2 class="text-2xl font-semibold mb-6 text-white">1. Reserva tu Auto Completo</h2>
+
+                <!-- Georreferenciación Personalizada y Fecha -->
+                <div class="mb-6">
+                    <label for="custom_origin" class="block text-sm font-medium text-gray-300 mb-1">📍 Origen Exacto</label>
+                    <input type="text" id="custom_origin" list="suggestions" placeholder="Ej: Av. del Libertador 1000, CABA" class="w-full p-3 border border-gray-600 rounded-lg focus:ring-success-green focus:border-success-green transition duration-150 mb-4 bg-gray-700 text-white">
+
+                    <label for="custom_destination" class="block text-sm font-medium text-gray-300 mb-1">🏁 Destino Exacto</label>
+                    <input type="text" id="custom_destination" list="suggestions" placeholder="Ej: Aeropuerto Internacional de Ezeiza" class="w-full p-3 border border-gray-600 rounded-lg focus:ring-success-green focus:border-success-green transition duration-150 mb-4 bg-gray-700 text-white">
+                    
+                    <!-- Wrapper para el Input de Fecha (Estética Profesional) -->
+                    <label for="travel_date" class="block text-sm font-medium text-gray-300 mb-1">📅 Fecha del Viaje</label>
+                    <div class="relative date-input-wrapper">
+                        <input type="date" id="travel_date" required class="w-full p-3 border border-gray-600 rounded-lg focus:ring-success-green focus:border-success-green transition duration-150">
+                    </div>
+
+                    <!-- Datalist para simular el autocompletado/sugerencias -->
+                    <datalist id="suggestions">
+                        <option value="Puerto Madero, CABA">
+                        <option value="Aeropuerto Internacional de Ezeiza, BA">
+                        <option value="Barrio Norte, CABA">
+                        <option value="La Plata Centro, BA">
+                        <option value="Mar del Plata, BA">
+                        <option value="Córdoba Capital">
+                    </datalist>
+                    
+                    <p class="text-xs text-gray-400 mt-2" id="km-rate-display">Tarifa base estándar: <strong>$850/km</strong> (Simulación).</p>
+                </div>
+
+                <!-- Modality: STATIC Auto Completo -->
+                <div class="mb-6 border-t pt-4 border-gray-700">
+                    <h3 class="block text-lg font-bold text-success-green mb-1 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-4-4 1.41-1.41L11 14.17l5.59-5.59L18 10l-7 7z"/></svg>
+                        Modalidad Exclusiva: Auto Completo (4 Puestos Ejecutivos)
+                    </h3>
+                    <p class="text-sm text-gray-400">Viaja con total privacidad. Tarifa aplicada con 12.5% de descuento por vehículo completo.</p>
+                </div>
+                
+                <!-- Resumen de Ruta y Demanda -->
+                <div id="map-simulation" class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 hidden">
+                    <h4 class="font-bold text-white mb-2 flex items-center">
+                         <svg class="w-5 h-5 mr-2 text-success-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Detalles de la Ruta
+                    </h4>
+                    <span id="map-status" class="text-white font-medium text-sm p-2 block text-center bg-gray-900 rounded-md mb-3">Ruta a calcular.</span>
+
+                    <div class="flex justify-between text-sm font-medium text-gray-400 p-2 bg-gray-700 rounded-md">
+                        <div class="flex flex-col items-center"><span class="text-white font-bold text-lg" id="sim-distance-display">-</span><span class="text-xs">Distancia (KM)</span></div>
+                        <div class="flex flex-col items-center"><span class="text-white font-bold text-lg" id="sim-time-display">-</span><span class="text-xs">Tiempo Est.</span></div>
+                        <div class="flex flex-col items-center"><span class="text-white font-bold text-lg" id="demand-level-display">-</span><span class="text-xs">Nivel Demanda</span></div>
+                    </div>
+                </div>
+
+                <button id="calculate-btn" class="btn-primary w-full bg-success-green text-primary-black font-bold py-3 rounded-lg shadow-lg hover:bg-opacity-80 transition duration-300">
+                    Calcular Tarifa Ejecutiva
+                </button>
+            </div>
+
+            <!-- Resultados -->
+            <div id="results-section" class="mt-8 hidden">
+                <h2 class="text-3xl font-bold text-white mb-4">2. Resumen y Confirmación</h2>
+
+                <!-- Tarjeta de Resultados del Viaje (Estética Mejorada) -->
+                <div id="trip-results" class="card p-6 rounded-xl mb-6 transition duration-300 border-2 border-success-green">
+                    <p class="text-xl font-semibold text-gray-200 mb-2">Ruta: <span id="route-display" class="text-white"></span></p>
+                    <p class="text-md text-gray-400 mb-4">Modalidad: <span id="mode-display" class="font-medium text-white"></span></p>
+
+                    <div id="discount-alert" class="p-3 rounded-lg text-sm mb-4"></div>
+
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end border-t pt-4 mt-4 border-gray-700">
+                        <!-- Detalles de Precio Total -->
+                        <div class="mb-4 sm:mb-0">
+                            <p class="text-lg text-gray-400">Tarifa Vehículo Completo (Final):</p>
+                            <p class="text-5xl font-extrabold text-success-green">
+                                <span id="final-price-display"></span>
+                            </p>
+                        </div>
+                        
+                        <!-- Precio por Puesto (Informacional) -->
+                        <div id="price-per-seat-box" class="result-box bg-gray-800 p-4 rounded-lg w-full sm:w-2/5 mt-4 sm:mt-0">
+                            <h3 class="font-bold text-md text-white mb-1">
+                                Precio Estimado por Puesto (x4)
+                            </h3>
+                            <p class="text-lg font-bold text-success-green"><span id="price-per-seat-display"></span></p>
+                            <p class="text-xs text-gray-400">Referencial. Viaje exclusivo no compartido.</p>
+                        </div>
+                    </div>
+
+                    <button id="confirm-btn" class="w-full bg-success-green text-primary-black font-bold py-3 rounded-lg shadow-md hover:bg-opacity-90 transition duration-300 mt-6">
+                        Confirmar Reserva Ejecutiva
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación de Compra (Checkout) -->
+    <div id="checkout-modal" class="modal-overlay">
+        <div class="modal-content p-8 rounded-xl card w-full max-w-lg">
+            <div class="flex justify-between items-center border-b pb-3 mb-4 border-gray-700">
+                <h3 class="text-2xl font-bold text-white">Confirmar Reserva</h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div id="modal-summary" class="bg-gray-800 p-4 rounded-lg mb-4 text-center">
+                <p class="text-lg font-medium text-gray-300">Tu Tarifa Final (Vehículo Completo) es:</p>
+                <p id="modal-price-display" class="text-4xl font-extrabold text-success-green mt-1"></p>
+                <p id="modal-route-display" class="text-sm text-gray-500 mt-2"></p>
+            </div>
+
+            <form id="checkout-form">
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Nombre Completo</label>
+                        <input type="text" placeholder="Ej: Juan Pérez" required class="w-full p-2 border border-gray-600 rounded-lg focus:ring-success-green focus:border-success-green bg-gray-700 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                        <input type="email" placeholder="ejemplo@mail.com" required class="w-full p-2 border border-gray-600 rounded-lg focus:ring-success-green focus:border-success-green bg-gray-700 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Método de Pago</label>
+                        <select required class="w-full p-2 border border-gray-600 rounded-lg focus:ring-success-green focus:border-success-green bg-gray-700 text-white">
+                            <option value="" disabled selected>Selecciona una opción...</option>
+                            <option class="text-black bg-white">Tarjeta de Crédito / Débito</option>
+                            <option class="text-black bg-white">Transferencia Bancaria (CBU)</option>
+                            <option class="text-black bg-white">Mercado Pago</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button type="submit" class="w-full bg-success-green text-primary-black font-bold py-3 rounded-lg hover:bg-opacity-90 transition shadow-lg">
+                        Pagar y Finalizar Reserva
+                    </button>
+                    <p class="text-xs text-center text-gray-500 mt-2">Recibirás la confirmación por email.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // --- CONSTANTES ---
+        const KM_RATE = 850; // $850 por kilómetro (Tarifa Base)
+        const AVG_SPEED_KMH = 90; // Velocidad promedio asumida para larga distancia (90 km/h)
+        const FULL_CAR_DISCOUNT_MULTIPLIER = 0.875; // 12.5% de descuento por vehículo completo
+        const TOTAL_SEATS = 4; // Constante para el cálculo referencial por puesto
+        
+        // Factores de Demanda y Mensajes
+        const DEMAND_FACTORS = {
+            'Baja': { multiplier: 1.0, color: 'text-white bg-green-700', text: '¡Demanda Baja! Tarifa estándar aplicada (1.0x).', display: 'Baja (Estándar)' },
+            'Media': { multiplier: 1.3, color: 'text-black bg-yellow-400', text: 'Demanda Media. Se aplica un recargo del +30% (1.3x).', display: 'Media (Recargo +30%)' },
+            'Alta': { multiplier: 1.5, color: 'text-white bg-red-700', text: '¡Atención! Demanda Alta. Se aplica un recargo del +50% (1.5x).', display: 'Alta (Recargo +50%)' }
+        };
+
+        // --- REFERENCIAS UI ---
+        const customOriginInput = document.getElementById('custom_origin');
+        const customDestinationInput = document.getElementById('custom_destination');
+        const travelDateInput = document.getElementById('travel_date');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultsSection = document.getElementById('results-section');
+        const finalPriceDisplay = document.getElementById('final-price-display');
+        const pricePerSeatDisplay = document.getElementById('price-per-seat-display');
+        const routeDisplay = document.getElementById('route-display');
+        const modeDisplay = document.getElementById('mode-display');
+        const mapSimulation = document.getElementById('map-simulation');
+        const simDistanceDisplay = document.getElementById('sim-distance-display');
+        const simTimeDisplay = document.getElementById('sim-time-display');
+        const mapStatus = document.getElementById('map-status'); // <--- AQUI ESTÁ LA CORRECCIÓN
+        const demandLevelDisplay = document.getElementById('demand-level-display');
+        const discountAlert = document.getElementById('discount-alert');
+        
+        // Modal
+        const checkoutModal = document.getElementById('checkout-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const confirmBtn = document.getElementById('confirm-btn');
+        const modalPriceDisplay = document.getElementById('modal-price-display');
+        const modalRouteDisplay = document.getElementById('modal-route-display');
+        const checkoutForm = document.getElementById('checkout-form');
+
+
+        // --- FUNCIONES DE UTILIDAD ---
+        const formatCurrency = (amount) => {
+            // Asegura que el formato sea profesional (ej: $123.456)
+            return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(amount);
+        };
+        
+        const formatTime = (totalHours) => {
+            const hours = Math.floor(totalHours);
+            const minutes = Math.round((totalHours - hours) * 60);
+            if (hours === 0 && minutes > 0) return `${minutes} min`;
+            if (hours === 0 && minutes === 0) return `-`;
+            return `${hours} hs ${minutes} min`;
+        };
+
+        const isValidDate = (dateString) => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); 
+            const selectedDate = new Date(dateString);
+            return selectedDate >= today;
+        };
+        
+        /**
+         * Determina el nivel de demanda basado en la fecha seleccionada.
+         * ALTA: 16 Dic - 15 Feb
+         * MEDIA: 16 Nov - 15 Dic Y 16 Feb - 15 Mar
+         * BAJA: El resto
+         */
+        function getDemandLevel(dateString) {
+            const date = new Date(dateString);
+            const month = date.getMonth(); // 0 (Ene) - 11 (Dic)
+            const day = date.getDate(); // 1 - 31
+
+            // RANGOS ALTA DEMANDA (1.5x): Segunda mitad de Dic, Enero completo, primera mitad de Feb
+            // Rango 1: 16 de Diciembre - 31 de Diciembre
+            if (month === 11 && day >= 16) return 'Alta';
+            // Rango 2: 1 de Enero - 31 de Enero
+            if (month === 0) return 'Alta';
+            // Rango 3: 1 de Febrero - 15 de Febrero
+            if (month === 1 && day <= 15) return 'Alta';
+
+            // RANGOS MEDIA DEMANDA (1.3x): 1 mes antes y 1 mes después de Alta Demanda
+            // Rango 4 (Antes): 16 de Noviembre - 15 de Diciembre
+            if ((month === 10 && day >= 16) || (month === 11 && day <= 15)) return 'Media';
+            // Rango 5 (Después): 16 de Febrero - 15 de Marzo
+            if ((month === 1 && day >= 16) || (month === 2 && day <= 15)) return 'Media';
+
+            // RANGO BAJA DEMANDA (1.0x): Resto del año
+            return 'Baja';
+        }
+
+        // Función SIMULADA de Georreferenciación y Cálculo de Distancia
+        function getSimulatedRoute(origin, destination) {
+            const lowerOrigin = origin.toLowerCase();
+            const lowerDestination = destination.toLowerCase();
+
+            let distanceKm = 0;
+            let fullOrigin = origin;
+            let fullDestination = destination;
+
+            // Simulación de Rutas Ejecutivas de Larga Distancia (Ejemplos)
+            if (lowerOrigin.includes('retiro') && lowerDestination.includes('ezeiza')) {
+                distanceKm = 40;
+                fullOrigin = "Puerto Madero (Oficina Ejecutiva), CABA";
+                fullDestination = "Ezeiza International Airport (EZE)";
+            } 
+            else if (lowerOrigin.includes('mar del plata') || lowerDestination.includes('mar del plata')) {
+                distanceKm = 450;
+                fullOrigin = "CABA (Zona Norte)";
+                fullDestination = "Mar del Plata (Hotel Exclusivo)";
+            }
+            else {
+                // Ruta general por defecto (Larga Distancia)
+                distanceKm = 700;
+                fullOrigin = origin.split(',')[0] + ', Resuelto (CABA)';
+                fullDestination = destination.split(',')[0] + ', Resuelto (Interior)';
+            }
+            
+            const travelTimeHours = distanceKm / AVG_SPEED_KMH;
+            
+            return { 
+                distance: distanceKm, 
+                time: travelTimeHours, 
+                fullOrigin: fullOrigin,
+                fullDestination: fullDestination
+            };
+        }
+
+
+        // --- LÓGICA PRINCIPAL ---
+        calculateBtn.addEventListener('click', () => {
+            const customOrigin = customOriginInput.value.trim();
+            const customDestination = customDestinationInput.value.trim();
+            const travelDate = travelDateInput.value;
+            
+            if (!customOrigin || !customDestination || !travelDate) {
+                // Validación: Si faltan campos, se usa mapStatus para mostrar el error.
+                mapStatus.textContent = '¡Completa Origen, Destino y Fecha del viaje!';
+                mapStatus.className = 'text-center font-medium text-sm p-2 block bg-danger-red text-white rounded-md mb-3';
+                mapSimulation.classList.remove('hidden');
+                resultsSection.classList.add('hidden');
+                return; 
+            }
+
+            if (!isValidDate(travelDate)) {
+                 mapStatus.textContent = '¡La fecha debe ser igual o posterior a hoy!';
+                 mapStatus.className = 'text-center font-medium text-sm p-2 block bg-danger-red text-white rounded-md mb-3';
+                 mapSimulation.classList.remove('hidden');
+                 resultsSection.classList.add('hidden');
+                 return;
+            } else {
+                 mapStatus.className = 'text-white font-medium text-sm p-2 block text-center bg-gray-900 rounded-md mb-3';
+            }
+
+            // 1. Obtener datos de la ruta (Simulación)
+            const routeData = getSimulatedRoute(customOrigin, customDestination);
+            const distanceKm = routeData.distance;
+            const travelTime = routeData.time;
+            
+            // 2. Determinar Nivel de Demanda y Factor
+            const demandLevel = getDemandLevel(travelDate);
+            const demandFactor = DEMAND_FACTORS[demandLevel];
+
+            // 3. Cálculo de Tarifa (Siempre Auto Completo)
+            // Tarifa base ajustada por demanda
+            const basePricePerKm = KM_RATE * demandFactor.multiplier; 
+            let baseTotalTripPrice = distanceKm * basePricePerKm;
+            
+            // Aplicar descuento por vehículo completo (al precio ajustado por demanda)
+            const finalPrice = baseTotalTripPrice * FULL_CAR_DISCOUNT_MULTIPLIER;
+            
+            // Precio referencial por puesto
+            const pricePerSeat = finalPrice / TOTAL_SEATS;
+            
+            const modeText = 'Auto Completo Privado (4 Puestos Ejecutivos)'; 
+
+            // 4. Mostrar Resultados de Ruta (UI)
+            simDistanceDisplay.textContent = `${distanceKm} km`;
+            simTimeDisplay.textContent = formatTime(travelTime);
+            demandLevelDisplay.textContent = demandFactor.display;
+            
+            mapStatus.textContent = `${routeData.fullOrigin} a ${routeData.fullDestination} (${travelDate})`;
+            mapSimulation.classList.remove('hidden');
+            
+            // 5. Mostrar Precios y Mensaje de Demanda
+            discountAlert.innerHTML = demandFactor.text;
+            discountAlert.className = `p-3 rounded-lg text-sm mb-4 font-semibold shadow-inner ${demandFactor.color}`;
+            
+            routeDisplay.textContent = `${routeData.fullOrigin} a ${routeData.fullDestination}`;
+            modeDisplay.textContent = modeText;
+            
+            finalPriceDisplay.textContent = formatCurrency(finalPrice);
+            pricePerSeatDisplay.textContent = formatCurrency(pricePerSeat);
+            
+            resultsSection.classList.remove('hidden');
+            document.getElementById('trip-results').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // --- LÓGICA DEL MODAL ---
+
+        confirmBtn.addEventListener('click', () => {
+            // Sincronizar datos de cálculo al modal
+            modalPriceDisplay.textContent = finalPriceDisplay.textContent;
+            modalRouteDisplay.textContent = routeDisplay.textContent + ` | Fecha: ${travelDateInput.value}`;
+            checkoutModal.style.display = 'flex';
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            checkoutModal.style.display = 'none';
+        });
+
+        checkoutModal.addEventListener('click', (e) => {
+            if (e.target === checkoutModal) {
+                checkoutModal.style.display = 'none';
+            }
+        });
+        
+        // Simulación de proceso de pago
+        checkoutForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Usamos un modal/mensaje de éxito en lugar de alert()
+            const successMessage = document.createElement('div');
+            successMessage.className = 'p-4 rounded-lg bg-success-green text-primary-black font-bold text-center fixed top-4 left-1/2 -translate-x-1/2 z-50 shadow-2xl transition duration-300 transform';
+            successMessage.textContent = '✅ ¡Reserva ejecutiva completada! Revisa tu email para los detalles.';
+            
+            document.body.appendChild(successMessage);
+            
+            setTimeout(() => {
+                successMessage.remove();
+            }, 5000); 
+
+            checkoutModal.style.display = 'none';
+            // Resetear el formulario principal después de la compra exitosa
+            customOriginInput.value = '';
+            customDestinationInput.value = '';
+            travelDateInput.value = '';
+            resultsSection.classList.add('hidden');
+        });
+
+
+        // Inicialización
+        window.onload = () => {
+            document.getElementById('km-rate-display').innerHTML = `Tarifa base estándar: <strong>${formatCurrency(KM_RATE)}/km</strong> (Simulación).`;
+        };
+    </script>
+</body>
+</html>
